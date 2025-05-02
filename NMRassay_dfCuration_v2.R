@@ -27,7 +27,7 @@
 
 ##########       Setup       ##########
 # Set working directory (the location with the necessary input files)
-setwd("/home/clawlab/Projects/SHS")
+setwd("/home/clawlab/Projects/SHS/data")
 
 # Install packages if not installed
 if(!"dplyr" %in% installed.packages()) install.packages("dplyr")
@@ -227,16 +227,10 @@ t_allSamples <- t_allSamples  %>%
                   mutate(b_isControl = ifelse(idNo %in% control_samples, 1, 0))
 
 ## BMI variables: "BMIcalc" and "BMIcategory"
-## According to CDC, BMI = weight [kg] / (height [m])^2 *10000[cm/m]
-# Function to calculate BMI
-calculate_bmi <- function(weight_kg, height_cm) {
-  bmi <- as.numeric(weight_kg) / ((as.numeric(height_cm)^2)*10000) # Calculate BMI
-  return(bmi) # Return the result
-}
-
-# Calculate BMI for all samples
+## According to CDC, BMI = weight [kg] / (height [m]^2)
+# Calculate BMI for all samples (the SHS height is provided in cm)
 t_allSamples <- t_allSamples  %>% 
-                  mutate(BMIcalc = calculate_bmi(EX2_7, EX2_8))
+                  mutate(BMIcalc = EX2_8/(EX2_7/100)^2)
 
 # Categorize continuous BMI values
 t_allSamples <- t_allSamples %>%
@@ -367,7 +361,7 @@ cat(paste0("Successfully output t_allSamples_postExclusions as: ", full_filename
 # Output: A "clean" dataset for EWAS/GWAS; clean_df, file = "SHSph2_NMRwSurveyDF_clean"        # interpreted data from survey, see logic in UML diagram (Supplementary Figure 2)
 clean_df <-t_allSamples_postExclusions  %>% 
             dplyr::select(idNo, NMRcalc, logNMR, COTconc, tHCconc, NICconc,  # data from LC-MS and NMR calcs
-            CENTER.y, S2EXDATE, S2SMOKE, S2SMKD, S2PPY, b_SmokerStatus, # data from raw survey variables
+            CENTER.y, S2EXDATE, S2SMOKE, S2SMKD, cpd, S2PPY, b_SmokerStatus, # data from raw survey variables
             S2AGE, b_Gender, BMIcalc, BMIcategory, b_isControl)  %>% 
             rename("CENTER" = "CENTER.y") # remove the '.y' for convenience
 write.csv(clean_df, file = clean_filename, row.names = TRUE)
@@ -375,3 +369,4 @@ cat(paste0("Successfully output clean_df as: ", clean_filename, "\n"))
 # Output: just sampleIDs of 816 participants; clean_df$idNo, file = "SHSph2_IDs_clean"
 write.csv(clean_df$idNo, file = cleanIDs_filename, row.names = TRUE)
 cat(paste0("Successfully output sample IDs for clean_df as: ", cleanIDs_filename))
+
